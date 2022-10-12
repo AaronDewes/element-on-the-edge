@@ -181,11 +181,10 @@ module.exports = (env, argv) => {
             // We need to specify that TS can be resolved without an extension
             extensions: ['.js', '.json', '.ts', '.tsx'],
             alias: {
-                // alias any requires to the react module to the one in our path,
-                // otherwise we tend to get the react source included twice when
-                // using `npm link` / `yarn link`.
-                "react": path.resolve(__dirname, 'node_modules/react'),
-                "react-dom": path.resolve(__dirname, 'node_modules/react-dom'),
+                "react": "preact/compat",
+                "react-dom/test-utils": "preact/test-utils",
+                "react-dom": "preact/compat",
+                "react/jsx-runtime": "preact/jsx-runtime",
 
                 // Same goes for js/react-sdk - we don't need two copies.
                 "matrix-js-sdk": path.resolve(__dirname, 'node_modules/matrix-js-sdk'),
