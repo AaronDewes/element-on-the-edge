@@ -24,7 +24,6 @@ import dis from 'matrix-react-sdk/src/dispatcher/dispatcher';
 import { _t } from 'matrix-react-sdk/src/languageHandler';
 import SdkConfig from 'matrix-react-sdk/src/SdkConfig';
 import { IConfigOptions } from "matrix-react-sdk/src/IConfigOptions";
-import * as rageshake from 'matrix-react-sdk/src/rageshake/rageshake';
 import { MatrixClient } from "matrix-js-sdk/src/client";
 import { Room } from "matrix-js-sdk/src/models/room";
 import Modal from "matrix-react-sdk/src/Modal";
@@ -107,12 +106,6 @@ export default class ElectronPlatform extends VectorBasePlatform {
                 action: Action.CheckUpdates,
                 ...getUpdateCheckStatus(status),
             });
-        });
-
-        // try to flush the rageshake logs to indexeddb before quit.
-        window.electron.on('before-quit', function() {
-            logger.log('element-desktop closing');
-            rageshake.flush();
         });
 
         window.electron.on('update-downloaded', this.onUpdateDownloaded);

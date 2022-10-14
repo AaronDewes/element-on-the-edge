@@ -34,12 +34,9 @@ import { ModuleRunner } from "matrix-react-sdk/src/modules/ModuleRunner";
 import ElectronPlatform from "./platform/ElectronPlatform";
 import PWAPlatform from "./platform/PWAPlatform";
 import WebPlatform from "./platform/WebPlatform";
-import { initRageshake, initRageshakeStore } from "./rageshakesetup";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - this path is created at runtime and therefore won't exist at typecheck time
 import { INSTALLED_MODULES } from "../modules";
-
-export const rageshakePromise = initRageshake();
 
 export function preparePlatform() {
     if (window.electron) {
@@ -52,14 +49,6 @@ export function preparePlatform() {
         logger.log("Using Web platform");
         PlatformPeg.set(new WebPlatform());
     }
-}
-
-export function setupLogStorage() {
-    if (SdkConfig.get().bug_report_endpoint_url) {
-        return initRageshakeStore();
-    }
-    logger.warn("No bug report endpoint set - logs will not be persisted");
-    return Promise.resolve();
 }
 
 export async function loadConfig() {

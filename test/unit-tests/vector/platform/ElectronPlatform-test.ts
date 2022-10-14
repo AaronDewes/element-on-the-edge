@@ -19,13 +19,8 @@ import { MatrixEvent, Room } from 'matrix-js-sdk/src/matrix';
 import { UpdateCheckStatus } from 'matrix-react-sdk/src/BasePlatform';
 import { Action } from 'matrix-react-sdk/src/dispatcher/actions';
 import dispatcher from 'matrix-react-sdk/src/dispatcher/dispatcher';
-import * as rageshake from 'matrix-react-sdk/src/rageshake/rageshake';
 
 import ElectronPlatform from '../../../../src/vector/platform/ElectronPlatform';
-
-jest.mock('matrix-react-sdk/src/rageshake/rageshake', () => ({
-    flush: jest.fn(),
-}));
 
 describe('ElectronPlatform', () => {
     const defaultUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
@@ -52,18 +47,6 @@ describe('ElectronPlatform', () => {
 
     const getElectronEventHandlerCall = (eventType: string): [type: string, handler: Function] | undefined =>
         mockElectron.on.mock.calls.find(([type]) => type === eventType);
-
-    it('flushes rageshake before quitting', () => {
-        new ElectronPlatform();
-        const [event, handler] = getElectronEventHandlerCall('before-quit');
-        // correct event bound
-        expect(event).toBeTruthy();
-
-        handler();
-
-        expect(logSpy).toHaveBeenCalled();
-        expect(rageshake.flush).toHaveBeenCalled();
-    });
 
     it('dispatches view settings action on preferences event', () => {
         new ElectronPlatform();

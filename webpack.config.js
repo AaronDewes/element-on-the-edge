@@ -8,7 +8,6 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const HtmlWebpackInjectPreload = require('@principalstudio/html-webpack-inject-preload');
-const SentryCliPlugin = require("@sentry/webpack-plugin");
 
 dotenv.config();
 let ogImageUrl = process.env.RIOT_OG_IMAGE_URL;
@@ -86,15 +85,8 @@ module.exports = (env, argv) => {
         // High quality, embedded source maps for dev builds
         development['devtool'] = "eval-source-map";
     } else {
-        if (process.env.CI_PACKAGE) {
-            // High quality source maps in separate .map files which include the source. This doesn't bulk up the .js
-            // payload file size, which is nice for performance but also necessary to get the bundle to a small enough
-            // size that sentry will accept the upload.
-            development['devtool'] = 'source-map';
-        } else {
-            // High quality source maps in separate .map files which don't include the source
-            development['devtool'] = 'nosources-source-map';
-        }
+        // High quality source maps in separate .map files which don't include the source
+        development['devtool'] = 'nosources-source-map';
     }
 
     // Resolve the directories for the react-sdk and js-sdk for later use. We resolve these early, so we
@@ -635,16 +627,6 @@ module.exports = (env, argv) => {
                 files: [{ match: /.*Inter.*\.woff2$/ }],
             }),
 
-            // upload to sentry if sentry env is present
-            process.env.SENTRY_DSN &&
-                new SentryCliPlugin({
-                    release: process.env.VERSION,
-                    include: "./webapp/bundles",
-                    errorHandler: (err, invokeErr, compilation) => {
-                        compilation.warnings.push('Sentry CLI Plugin: ' + err.message);
-                        console.log(`::warning title=Sentry error::${err.message}`);
-                    },
-                }),
             new webpack.EnvironmentPlugin(['VERSION']),
 
             // Fix util-browserify

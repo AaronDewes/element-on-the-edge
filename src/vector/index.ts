@@ -105,8 +105,6 @@ const supportedBrowser = checkBrowserFeatures();
 async function start() {
     // load init.ts async so that its code is not executed immediately and we can catch any exceptions
     const {
-        rageshakePromise,
-        setupLogStorage,
         preparePlatform,
         loadOlm,
         loadConfig,
@@ -123,9 +121,6 @@ async function start() {
         "./init");
 
     try {
-        // give rageshake a chance to load/fail, we don't actually assert rageshake loads, we allow it to fail if no IDB
-        await settled(rageshakePromise);
-
         const fragparts = parseQsFromFragment(window.location);
 
         // don't try to redirect to the native apps if we're
@@ -152,9 +147,6 @@ async function start() {
         const loadConfigPromise = loadConfig();
         await settled(loadConfigPromise); // wait for it to settle
         // keep initialising so that we can show any possible error with as many features (theme, i18n) as possible
-
-        // now that the config is ready, try to persist logs
-        const persistLogsPromise = setupLogStorage();
 
         // Load modules before language to ensure any custom translations are respected, and any app
         // startup functionality is run
@@ -218,11 +210,6 @@ async function start() {
         await loadModulesPromise;
         await loadThemePromise;
         await loadLanguagePromise;
-
-        // We don't care if the log persistence made it through successfully, but we do want to
-        // make sure it had a chance to load before we move on. It's prepared much higher up in
-        // the process, making this the first time we check that it did something.
-        await settled(persistLogsPromise);
 
         // Finally, load the app. All of the other react-sdk imports are in this file which causes the skinner to
         // run on the components.
