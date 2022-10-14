@@ -646,6 +646,11 @@ module.exports = (env, argv) => {
                     },
                 }),
             new webpack.EnvironmentPlugin(['VERSION']),
+
+            // Fix util-browserify
+            new webpack.DefinePlugin({
+                'process.env.NODE_DEBUG': JSON.stringify(process.env.NODE_DEBUG)
+            }),
         ].filter(Boolean),
 
         output: {
