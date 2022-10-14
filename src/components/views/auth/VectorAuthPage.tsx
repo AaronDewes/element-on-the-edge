@@ -17,7 +17,8 @@ limitations under the License.
 import * as React from 'react';
 import SdkConfig from 'matrix-react-sdk/src/SdkConfig';
 
-import VectorAuthFooter from "./VectorAuthFooter";
+// @ts-expect-error Temporarily broken while moving to webpack 5
+import VectorAuthFooter from "./AuthFooter";
 
 export default class VectorAuthPage extends React.PureComponent {
     private static welcomeBackgroundUrl;

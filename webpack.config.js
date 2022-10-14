@@ -6,7 +6,7 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const HtmlWebpackInjectPreload = require('@principalstudio/html-webpack-inject-preload');
 const SentryCliPlugin = require("@sentry/webpack-plugin");
 
@@ -118,12 +118,6 @@ module.exports = (env, argv) => {
 
     return {
         ...development,
-        node: {
-            // Mock out the NodeFS module: The opus decoder imports this wrongly.
-            fs: 'empty',
-            net: 'empty',
-            tls: 'empty',
-        },
 
         entry: {
             "bundle": "./src/vector/index.ts",
@@ -151,14 +145,10 @@ module.exports = (env, argv) => {
                 },
             },
 
-            // This fixes duplicate files showing up in chrome with sourcemaps enabled.
-            // See https://github.com/webpack/webpack/issues/7128 for more info.
-            namedModules: false,
-
             // Minification is normally enabled by default for webpack in production mode, but
             // we use a CSS optimizer too and need to manage it ourselves.
             minimize: enableMinification,
-            minimizer: enableMinification ? [new TerserPlugin({}), new OptimizeCSSAssetsPlugin({})] : [],
+            minimizer: enableMinification ? [new TerserPlugin({}), new CssMinimizerPlugin({})] : [],
 
             // Set the value of `process.env.NODE_ENV` for libraries like React
             // See also https://v4.webpack.js.org/configuration/optimization/#optimizationnodeenv
@@ -166,6 +156,13 @@ module.exports = (env, argv) => {
         },
 
         resolve: {
+            fallback: {
+                // Mock out the NodeFS module: The opus decoder imports this wrongly.
+                fs: 'empty',
+                net: 'empty',
+                tls: 'empty',
+                util: require.resolve("util/")
+            },
             // We define an alternative import path so we can safely use src/ across the react-sdk
             // and js-sdk. We already import from src/ where possible to ensure our source maps are
             // extremely accurate (and because we're capable of compiling the layers manually rather
@@ -266,34 +263,36 @@ module.exports = (env, argv) => {
                             ident: 'postcss',
                             options: {
                                 sourceMap: true,
-                                plugins: () => [
-                                    // Note that we use significantly fewer plugins on the plain
-                                    // CSS parser. If we start to parse plain CSS, we end with all
-                                    // kinds of nasty problems (like stylesheets not loading).
-                                    //
-                                    // You might have noticed that we're also sending regular CSS
-                                    // through PostCSS. This looks weird, and in fact is probably
-                                    // not what you'd expect, however in order for our CSS build
-                                    // to work nicely we have to do this. Because down the line
-                                    // our SCSS stylesheets reference plain CSS we have to load
-                                    // the plain CSS through PostCSS so it can find it safely. This
-                                    // also acts like a babel-for-css by transpiling our (S)CSS
-                                    // down/up to the right browser support (prefixes, etc).
-                                    // Further, if we don't do this then PostCSS assumes that our
-                                    // plain CSS is SCSS and it really doesn't like that, even
-                                    // though plain CSS should be compatible. The chunking options
-                                    // at the top of this webpack config help group the SCSS and
-                                    // plain CSS together for the bundler.
+                                postcssOptions: {
+                                    plugins: [
+                                        // Note that we use significantly fewer plugins on the plain
+                                        // CSS parser. If we start to parse plain CSS, we end with all
+                                        // kinds of nasty problems (like stylesheets not loading).
+                                        //
+                                        // You might have noticed that we're also sending regular CSS
+                                        // through PostCSS. This looks weird, and in fact is probably
+                                        // not what you'd expect, however in order for our CSS build
+                                        // to work nicely we have to do this. Because down the line
+                                        // our SCSS stylesheets reference plain CSS we have to load
+                                        // the plain CSS through PostCSS so it can find it safely. This
+                                        // also acts like a babel-for-css by transpiling our (S)CSS
+                                        // down/up to the right browser support (prefixes, etc).
+                                        // Further, if we don't do this then PostCSS assumes that our
+                                        // plain CSS is SCSS and it really doesn't like that, even
+                                        // though plain CSS should be compatible. The chunking options
+                                        // at the top of this webpack config help group the SCSS and
+                                        // plain CSS together for the bundler.
 
-                                    require("postcss-simple-vars")(),
-                                    require("postcss-hexrgba")(),
+                                        require("postcss-simple-vars")(),
+                                        require("postcss-hexrgba")(),
 
-                                    // It's important that this plugin is last otherwise we end
-                                    // up with broken CSS.
-                                    require('postcss-preset-env')({ stage: 3, browsers: 'last 2 versions' }),
-                                ],
-                                parser: "postcss-scss",
-                                "local-plugins": true,
+                                        // It's important that this plugin is last otherwise we end
+                                        // up with broken CSS.
+                                        require('postcss-preset-env')({ stage: 3, browsers: 'last 2 versions' }),
+                                    ],
+                                    parser: "postcss-scss",
+                                    "local-plugins": true,
+                                },
                             },
                         },
                     ],
@@ -342,26 +341,36 @@ module.exports = (env, argv) => {
                                 sourceMap: true,
                             },
                         },
+                        // A terrible hack to fix $(res) not being replaced properly
+                        {
+                            loader: 'string-replace-loader',
+                            options: {
+                                search: '$(res)',
+                                replace: '../../..',
+                            }
+                        },
                         {
                             loader: 'postcss-loader',
                             ident: 'postcss',
                             options: {
                                 sourceMap: true,
-                                plugins: () => [
-                                    // Note that we use slightly different plugins for PostCSS.
-                                    require('postcss-import')(),
-                                    require("postcss-mixins")(),
-                                    require("postcss-simple-vars")(),
-                                    require("postcss-nested")(),
-                                    require("postcss-easings")(),
-                                    require("postcss-hexrgba")(),
+                                postcssOptions: {
+                                    plugins: [
+                                        // Note that we use slightly different plugins for PostCSS.
+                                        require('postcss-import')(),
+                                        require("postcss-mixins")(),
+                                        require("postcss-simple-vars")(),
+                                        require("postcss-nested")(),
+                                        require("postcss-easings")(),
+                                        require("postcss-hexrgba")(),
 
-                                    // It's important that this plugin is last otherwise we end
-                                    // up with broken CSS.
-                                    require('postcss-preset-env')({ stage: 3, browsers: 'last 2 versions' }),
-                                ],
-                                parser: "postcss-scss",
-                                "local-plugins": true,
+                                        // It's important that this plugin is last otherwise we end
+                                        // up with broken CSS.
+                                        require('postcss-preset-env')({ stage: 3, browsers: 'last 2 versions' }),
+                                    ],
+                                    parser: "postcss-scss",
+                                    "local-plugins": true,
+                                },
                             },
                         },
                     ],
@@ -456,7 +465,7 @@ module.exports = (env, argv) => {
                 },
                 {
                     test: /\.svg$/,
-                    issuer: /\.(js|ts|jsx|tsx|html)$/,
+                    //issuer: /\.(js|ts|jsx|tsx|html)$/,
                     use: [
                         {
                             loader: '@svgr/webpack',
@@ -469,10 +478,11 @@ module.exports = (env, argv) => {
                                 // props set on the svg will override defaults
                                 expandProps: 'end',
                                 svgoConfig: {
-                                    plugins: {
+                                    plugins: [
+                                        'preset-default',
                                         // generates a viewbox if missing
-                                        removeDimensions: true,
-                                    },
+                                        "removeDimensions",
+                                    ],
                                 },
                                 esModule: false,
                                 name: '[name].[hash:7].[ext]',
@@ -654,16 +664,16 @@ module.exports = (env, argv) => {
 
         // configuration for the webpack-dev-server
         devServer: {
-            // serve unwebpacked assets from webapp.
-            contentBase: [
-                './webapp',
-            ],
-
-            // Only output errors, warnings, or new compilations.
-            // This hides the massive list of modules.
-            stats: 'minimal',
-            hotOnly: true,
-            inline: true,
+            static: {
+                // serve unwebpacked assets from webapp.
+                directory: './webapp',
+            },
+            devMiddleware: {
+                // Only output errors, warnings, or new compilations.
+                // This hides the massive list of modules.
+                stats: 'minimal',
+            },
+            hot: "only",
         },
     };
 };

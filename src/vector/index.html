@@ -49,10 +49,8 @@
         <% }
     } %>
 
-    <% for (var i=0; i < htmlWebpackPlugin.tags.headTags.length; i++) {
-        var tag = htmlWebpackPlugin.tags.headTags[i];
-        var path = tag.attributes && tag.attributes.href;
-        if (path.includes("/Inter/")) { %>
+    <% for (const tag of htmlWebpackPlugin.tags.headTags) {
+        if (tag?.attributes?.href?.path?.includes("/Inter/")) { %>
             <link rel="preload" as="font" href=".<%= path %>" crossorigin="anonymous"/>
         <% }
     } %>
@@ -61,7 +59,7 @@
   <body style="height: 100%; margin: 0;">
     <noscript>Sorry, Element requires JavaScript to be enabled.</noscript> <!-- TODO: Translate this? -->
     <section id="matrixchat" style="height: 100%;" class="notranslate"></section>
-    <script src="<%= htmlWebpackPlugin.files.js.find(entry => entry.includes("bundle.js")) %>"></script>
+    <script src="<%= htmlWebpackPlugin.files.js.find(entry => entry?.includes("bundle.js")) %>"></script>
 
     <!-- Legacy supporting Prefetch images -->
     <img src="<%= require('matrix-react-sdk/res/img/warning.svg').default %>" aria-hidden alt="" width="24" height="23" style="visibility: hidden; position: absolute; top: 0px; left: 0px;"/>

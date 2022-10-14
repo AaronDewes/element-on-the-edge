@@ -6,7 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 const mkdirp = require("mkdirp");
-const fetch = require("node-fetch");
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const ProxyAgent = require("simple-proxy-agent");
 
 console.log("Making webapp directory");
